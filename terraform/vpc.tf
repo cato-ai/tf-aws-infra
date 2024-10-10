@@ -1,5 +1,5 @@
 resource "aws_vpc" "csye6225_vpc" {
-  cidr_block = "10.10.0.0/16"
+  cidr_block = var.vpc_ip
   tags = {
     Name = "csye6225_vpc"
   }
@@ -57,8 +57,3 @@ resource "aws_route_table_association" "associate_private_2" {
   subnet_id      = aws_subnet.csye6225_subnet_2_private.id
   route_table_id = aws_route_table.csye6225_private_rt.id
 }
-
-
-
-
-
