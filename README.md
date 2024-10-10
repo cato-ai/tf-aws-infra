@@ -1,6 +1,19 @@
 # tf-aws-infra
 A repository for implementing Infrasutructure as code with Terraform
 
-BUMPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP!!!!
-Another Change
-Inserting values to check for `tf check` action
+To Run use the steps below
+
+APPLY
+```
+terraform apply
+```
+
+FORMAT
+```
+terraform fmt
+```
+
+PLAN
+```
+terraform plan 
+```
