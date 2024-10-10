@@ -38,11 +38,6 @@ resource "aws_route" "public_route_table_igw_associtaion" {
   gateway_id             = aws_internet_gateway.csye6225_igw.id
 }
 
-resource "aws_route_table_association" "associate_igw" {
-  gateway_id     = aws_internet_gateway.csye6225_igw.id
-  route_table_id = aws_route_table.csye6225_public_rt.id
-}
-
 resource "aws_route_table_association" "associate_private_0" {
   subnet_id      = aws_subnet.csye6225_subnet_0_private.id
   route_table_id = aws_route_table.csye6225_private_rt.id
