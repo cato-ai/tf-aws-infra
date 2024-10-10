@@ -21,3 +21,9 @@ variable "provider_region" {
   default     = "us-east-1"
   description = "Region location for aws"
 }
+
+variable "vpc_ip" {
+  type        = string
+  default     = "10.10.0.0/16"
+  description = "IP for VPC"
+}

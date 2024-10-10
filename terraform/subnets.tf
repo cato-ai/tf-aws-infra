@@ -3,7 +3,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_subnet" "csye6225_subnet_0_public" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 0)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 0)
   map_public_ip_on_launch = "true"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
@@ -13,7 +13,7 @@ resource "aws_subnet" "csye6225_subnet_0_public" {
 }
 
 resource "aws_subnet" "csye6225_subnet_0_private" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 1)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 1)
   map_public_ip_on_launch = "false"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
@@ -23,7 +23,7 @@ resource "aws_subnet" "csye6225_subnet_0_private" {
 }
 
 resource "aws_subnet" "csye6225_subnet_1_public" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 2)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 2)
   map_public_ip_on_launch = "true"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
@@ -34,7 +34,7 @@ resource "aws_subnet" "csye6225_subnet_1_public" {
 }
 
 resource "aws_subnet" "csye6225_subnet_1_private" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 3)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 3)
   map_public_ip_on_launch = "false"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
@@ -44,7 +44,7 @@ resource "aws_subnet" "csye6225_subnet_1_private" {
 }
 
 resource "aws_subnet" "csye6225_subnet_2_public" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 4)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 4)
   map_public_ip_on_launch = "true"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
@@ -54,7 +54,7 @@ resource "aws_subnet" "csye6225_subnet_2_public" {
 }
 
 resource "aws_subnet" "csye6225_subnet_2_private" {
-  cidr_block              = cidrsubnet("10.10.0.0/16", 8, 5)
+  cidr_block              = cidrsubnet(var.vpc_ip, 8, 5)
   map_public_ip_on_launch = "false"
   vpc_id                  = aws_vpc.csye6225_vpc.id
   tags = {
