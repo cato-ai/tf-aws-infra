@@ -15,3 +15,9 @@ variable "subnet_2_az" {
   default     = "us-east-1c"
   description = "Subnet Availability Zone - 2"
 }
+
+variable "provider_region" {
+  type        = string
+  default     = "us-east-1"
+  description = "Region location for aws"
+}
