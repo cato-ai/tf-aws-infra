@@ -1,0 +1,28 @@
+name: Terraform Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: Terraform Format and Validate Worklflow
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform-version: 1.9.7
+
+      - name: Fmt Check
+        run: terraform fmt -check -recursive
+        working-directory: ./
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./
