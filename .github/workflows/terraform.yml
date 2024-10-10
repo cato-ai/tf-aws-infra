@@ -19,6 +19,10 @@ jobs:
         with:
           terraform-version: 1.9.7
 
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: ./terraform/
+
       - name: Fmt Check
         run: terraform fmt -check -recursive
         working-directory: ./terraform/
