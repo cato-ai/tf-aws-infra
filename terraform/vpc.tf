@@ -23,7 +23,7 @@ resource "aws_route_table_association" "associate_public_0" {
 }
 
 resource "aws_route_table_association" "associate_public_1" {
-  subnet_id      = aws_subnet.csye6225_subnet_1_public.id
+  subnet_id         =    aws_subnet.csye6225_subnet_1_public.id
   route_table_id = aws_route_table.csye6225_public_rt.id
 }
 
