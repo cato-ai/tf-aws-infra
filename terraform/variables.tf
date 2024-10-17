@@ -27,3 +27,23 @@ variable "vpc_ip" {
   default     = "10.10.0.0/16"
   description = "IP for VPC"
 }
+
+variable "ami_name" {
+  description = "The name of the AMI to be used for the EC2 instance"
+  type        = string
+  default     = "ami-02b949400f3236da8"
+}
+
+variable "volume_size" {
+  description = "The size of volume in (GiB)"
+  type        = number
+  default     = 25
+}
+
+variable "key_name" {
+  description = "The Key used to create instance"
+  type        = string
+  default     = ""
+}
+
+
