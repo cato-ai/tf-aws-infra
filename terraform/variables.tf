@@ -50,29 +50,34 @@ variable "DB_USERNAME" {
   description = "Default name of DB User"
   type        = string
   default     = "cato_ai"
+  sensitive   = true
 }
 
 variable "DB_PASSWORD" {
   description = "Default password of DB User"
   type        = string
   default     = ""
+  sensitive   = true
 }
 
 variable "DB_NAME" {
   description = "Default name of DB "
   type        = string
   default     = "c4t0"
+  sensitive   = true
 }
 
 variable "SERVER_HOSTNAME" {
   description = "Default hostname of application "
   type        = string
   default     = "127.0.0.1"
+  sensitive   = true
 }
 
 variable "SERVER_PORT_NUMBER" {
   description = "Default hostname of application "
   type        = string
   default     = "3000"
+  sensitive   = true
 
 }
