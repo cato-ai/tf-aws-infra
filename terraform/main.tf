@@ -19,9 +19,9 @@ resource "aws_instance" "webapp_server" {
     DB_NAME="${aws_db_instance.csye6225_webapp_db.db_name}"
     DB_USER="${aws_db_instance.csye6225_webapp_db.username}"
     DB_PASSWORD="${aws_db_instance.csye6225_webapp_db.password}"
-    echo DB_CONNECTION_URL="postgres://$DB_USER:$DB_PASSWORD${aws_db_instance.csye6225_webapp_db.endpoint}/$DB_NAME" >> /opt/webapp/.env
-    echo SERVER_HOSTNAME="${var.SERVER_HOSTNAME}" >> /opt/webapp/.env
-    echo SERVER_PORT_NUMBER="${var.SERVER_PORT_NUMBER}" >> /opt/webapp/.env
+    echo DB_CONNECTION_URL="postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/$DB_NAME" >> /opt/webapp/.env
+    echo SERVER_HOSTNAME='${var.SERVER_HOSTNAME}' >> /opt/webapp/.env
+    echo SERVER_PORT_NUMBER='${var.SERVER_PORT_NUMBER}' >> /opt/webapp/.env
 
     # Set permissions for the .env file
     sudo chmod 600 /opt/webapp/.env
