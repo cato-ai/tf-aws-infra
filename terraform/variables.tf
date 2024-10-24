@@ -31,7 +31,7 @@ variable "vpc_ip" {
 variable "ami_name" {
   description = "The name of the AMI to be used for the EC2 instance"
   type        = string
-  default     = "ami-02b949400f3236da8"
+  default     = "ami-0707640677e9a9e1f"
 }
 
 variable "volume_size" {
@@ -46,4 +46,33 @@ variable "key_name" {
   default     = ""
 }
 
+variable "DB_USERNAME" {
+  description = "Default name of DB User"
+  type        = string
+  default     = "cato_ai"
+}
 
+variable "DB_PASSWORD" {
+  description = "Default password of DB User"
+  type        = string
+  default     = ""
+}
+
+variable "DB_NAME" {
+  description = "Default name of DB "
+  type        = string
+  default     = "c4t0"
+}
+
+variable "SERVER_HOSTNAME" {
+  description = "Default hostname of application "
+  type        = string
+  default     = "127.0.0.1"
+}
+
+variable "SERVER_PORT_NUMBER" {
+  description = "Default hostname of application "
+  type        = string
+  default     = "3000"
+
+}
