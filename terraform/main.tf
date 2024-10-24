@@ -110,15 +110,15 @@ resource "aws_db_parameter_group" "csye6225_db_parameter_group" {
   description = "This is the database to use for webapp created for CSYE6225"
 
   parameter {
-    name = "rds.force_ssl"
-    value = "0"
+    name         = "rds.force_ssl"
+    value        = "0"
     apply_method = "pending-reboot"
   }
 }
 
 resource "aws_db_subnet_group" "csye6225_db_subnet_group" {
   name       = "csye6225-db-subnet-group"
-  subnet_ids = [aws_subnet.csye6225_subnet_0_private.id, aws_subnet.csye6225_subnet_1_private.id, aws_subnet.csye6225_subnet_2_private.id] 
+  subnet_ids = [aws_subnet.csye6225_subnet_0_private.id, aws_subnet.csye6225_subnet_1_private.id, aws_subnet.csye6225_subnet_2_private.id]
   tags = {
     Name = "csye6225-db-subnet-group"
   }
@@ -126,18 +126,18 @@ resource "aws_db_subnet_group" "csye6225_db_subnet_group" {
 
 
 resource "aws_db_instance" "csye6225_webapp_db" {
-  identifier           = "csye6225-webapp-db"
-  engine               = "postgres"
-  instance_class       = "db.t4g.micro"
-  db_name              = var.DB_NAME
-  allocated_storage    = 20
-  multi_az             = false
-  username             = var.DB_USERNAME
-  password             = var.DB_PASSWORD
-  publicly_accessible  = false
-  skip_final_snapshot = true
+  identifier             = "csye6225-webapp-db"
+  engine                 = "postgres"
+  instance_class         = "db.t4g.micro"
+  db_name                = var.DB_NAME
+  allocated_storage      = 20
+  multi_az               = false
+  username               = var.DB_USERNAME
+  password               = var.DB_PASSWORD
+  publicly_accessible    = false
+  skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.database_security_group.id]
-  db_subnet_group_name = aws_db_subnet_group.csye6225_db_subnet_group.id
-  parameter_group_name = aws_db_parameter_group.csye6225_db_parameter_group.id
-  depends_on = [aws_vpc.csye6225_vpc, aws_subnet.csye6225_subnet_0_private ]
+  db_subnet_group_name   = aws_db_subnet_group.csye6225_db_subnet_group.id
+  parameter_group_name   = aws_db_parameter_group.csye6225_db_parameter_group.id
+  depends_on             = [aws_vpc.csye6225_vpc, aws_subnet.csye6225_subnet_0_private]
 }
