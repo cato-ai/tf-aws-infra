@@ -72,7 +72,7 @@ resource "aws_instance" "webapp_server" {
 
   EOF
 
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 }
 
 resource "aws_security_group" "application_security_group" {
