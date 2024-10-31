@@ -5,13 +5,15 @@ resource "aws_instance" "webapp_server" {
   vpc_security_group_ids = [
     aws_security_group.application_security_group.id
   ]
+
+
   root_block_device {
     volume_type           = "gp2"
     volume_size           = var.volume_size
     delete_on_termination = true
   }
 
-  depends_on = [aws_db_instance.csye6225_webapp_db]
+  depends_on = [aws_db_instance.csye6225_webapp_db, aws_s3_bucket.webapp_bucket]
 
   user_data = <<-EOF
     #!/bin/bash
@@ -19,16 +21,58 @@ resource "aws_instance" "webapp_server" {
     DB_NAME="${aws_db_instance.csye6225_webapp_db.db_name}"
     DB_USER="${aws_db_instance.csye6225_webapp_db.username}"
     DB_PASSWORD="${aws_db_instance.csye6225_webapp_db.password}"
+    S3_NAME="${aws_s3_bucket.webapp_bucket.bucket}"
     echo DB_CONNECTION_URL="postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/$DB_NAME" >> /opt/webapp/.env
-    echo SERVER_HOSTNAME='${var.SERVER_HOSTNAME}' >> /opt/webapp/.env
-    echo SERVER_PORT_NUMBER='${var.SERVER_PORT_NUMBER}' >> /opt/webapp/.env
+    echo SERVER_HOSTNAME="${var.SERVER_HOSTNAME}" >> /opt/webapp/.env
+    echo SERVER_PORT_NUMBER="${var.SERVER_PORT_NUMBER}" >> /opt/webapp/.env
+    echo S3_BUCKET_NAME=$S3_NAME >> /opt/webapp/.env
 
     # Set permissions for the .env file
     sudo chmod 600 /opt/webapp/.env
     sudo chown -R csye6225:csye6225 /opt/webapp/.env
     sudo rm -rf /opt/webapp/build 
+    cat <<EOT > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    {
+    "metrics": {
+        "namespace": "CWAgent",
+        "metrics_collected": {
+        "statsd": 
+            {
+                "service_address": ":8125",
+                "metrics_collection_interval": 1,
+                "metrics_aggregation_interval": 60
+            }
+        }
+    },
+    "logs": {
+        "logs_collected": {
+        "files": 
+            {
+                "collect_list": [
+                    {
+                        "file_path": "/opt/webapp/webapp.log",
+                        "log_group_name": "/aws/ec2/webapp_csye6225",
+                        "log_stream_name": "webapp",
+                        "retention_in_days": 1
+                    }
+                ]
+            }
+        }
+    }
+    }
+    EOT
+
+    sudo chown cwagent:cwagent /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    sudo chmod 644 /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    sudo chmod 644 /var/log/syslog
+    sudo systemctl daemon-reload
+    sudo systemctl restart amazon-cloudwatch-agent
+
     systemctl restart csye6225.service
+
   EOF
+
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 }
 
 resource "aws_security_group" "application_security_group" {
