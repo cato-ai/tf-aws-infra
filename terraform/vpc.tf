@@ -52,3 +52,167 @@ resource "aws_route_table_association" "associate_private_2" {
   subnet_id      = aws_subnet.csye6225_subnet_2_private.id
   route_table_id = aws_route_table.csye6225_private_rt.id
 }
+
+resource "random_uuid" "bucket_uuid" {}
+
+resource "aws_kms_key" "mykey" {
+  description             = "This key is used to encrypt bucket objects"
+  deletion_window_in_days = 10
+}
+
+
+# Create a private S3 bucket with a unique name
+resource "aws_s3_bucket" "webapp_bucket" {
+  bucket        = random_uuid.bucket_uuid.result
+  force_destroy = true
+
+  tags = {
+    Name        = "Private S3 Bucket"
+    Environment = "Dev"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
+  bucket = aws_s3_bucket.webapp_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+
+resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_policy" {
+  bucket = aws_s3_bucket.webapp_bucket.bucket
+
+  rule {
+    id     = "transition-to-IA"
+    status = "Enabled"
+
+    filter {}
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+resource "aws_route53_record" "webapp_a_record" {
+  zone_id = var.hosted_zone
+  name    = "${var.hosted_zone_name}.sampurna.xyz"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.webapp_server.public_ip]
+}
+
+resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
+  name        = "ec2_s3_cloudwatch_route53_policy"
+  description = "Policy to allow necessary actions for EC2, S3, CloudWatch, and Route 53"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        # S3 Permissions
+        Effect = "Allow",
+        Action = [
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
+          "s3:PutBucketEncryption",
+          "s3:PutBucketPolicy",
+          "s3:PutBucketLifecycleConfiguration",
+          "s3:ListBucket",
+          "s3:DeleteObject",
+          "s3:PutObject",
+          "s3:GetObject"
+        ],
+        Resource = [
+          "${aws_s3_bucket.webapp_bucket.arn}",
+          "${aws_s3_bucket.webapp_bucket.arn}/*"
+        ]
+      },
+      {
+        # Route 53 Permissions
+        Effect = "Allow",
+        Action = [
+          "route53:ListHostedZones",
+          "route53:ChangeResourceRecordSets",
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets"
+        ],
+        Resource = "*"
+      },
+      {
+        # CloudWatch Logs Permissions
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ],
+        Resource = "*"
+      },
+      {
+        # CloudWatch Metrics Permissions
+        Effect = "Allow",
+        Action = [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics"
+        ],
+        Resource = "*"
+      },
+      {
+        # EC2 Describe Permissions
+        Effect = "Allow",
+        Action = [
+          "ec2:DescribeTags",
+          "ec2:DescribeInstances"
+        ],
+        Resource = "*"
+      },
+      {
+        # Additional permissions for Parameter Store (SSM) and RDS
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameters",
+          "rds:DescribeDBInstances",
+          "rds:DescribeDBClusters"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+resource "aws_iam_role" "ec2_role" {
+  name               = "ec2_role"
+  assume_role_policy = <<EOF
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "ec2.amazonaws.com"
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    }
+EOF
+}
+resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.ec2_s3_cloudwatch_route53_policy.arn
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "ec2_instance_profile"
+  role = aws_iam_role.ec2_role.name # Attach the IAM role
+}
+

@@ -81,3 +81,17 @@ variable "SERVER_PORT_NUMBER" {
   sensitive   = true
 
 }
+
+variable "hosted_zone" {
+  description = "The hosted zone depending upon it's dev or demo account"
+  type        = string
+  default     = "Z05102462WJ9ZH32SJ0W6" # default is dev.sampurna.xyz id
+}
+
+variable "hosted_zone_name" {
+  description = "The hosted zone name dev/demo"
+  type        = string
+  default     = "dev" # default is dev.sampurna.xyz
+}
+
+
