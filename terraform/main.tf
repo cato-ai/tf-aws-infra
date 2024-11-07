@@ -270,7 +270,7 @@ resource "aws_autoscaling_group" "webapp_auto_scaler" {
   min_size                  = 3
   desired_capacity          = 3
 
-  target_group_arns = [ aws_lb_target_group.webapp_lb_target_group.arn ]
+  target_group_arns = [aws_lb_target_group.webapp_lb_target_group.arn]
 }
 
 
@@ -347,7 +347,7 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
   }
   network_interfaces {
     associate_public_ip_address = true
-    security_groups = [ aws_security_group.application_security_group.id ]
+    security_groups             = [aws_security_group.application_security_group.id]
   }
 
   key_name = "CSYE6225-07"
@@ -355,19 +355,19 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
 
 
 resource "aws_lb" "csye6225_webapp_load_balancer" {
-  name = "csye6225-webapp-load-balancer"
-  internal = false
-  security_groups = [aws_security_group.load_balancer_security_group.id ]
-  subnets = [ aws_subnet.csye6225_subnet_0_public.id , aws_subnet.csye6225_subnet_1_public.id , aws_subnet.csye6225_subnet_2_public.id ]
+  name                       = "csye6225-webapp-load-balancer"
+  internal                   = false
+  security_groups            = [aws_security_group.load_balancer_security_group.id]
+  subnets                    = [aws_subnet.csye6225_subnet_0_public.id, aws_subnet.csye6225_subnet_1_public.id, aws_subnet.csye6225_subnet_2_public.id]
   enable_deletion_protection = false
-  load_balancer_type = "application"
-  enable_http2 = true
-  
+  load_balancer_type         = "application"
+  enable_http2               = true
+
 }
 
 resource "aws_lb_target_group" "webapp_lb_target_group" {
   name     = "webapp-lb-target-group"
-  port     = 3000              
+  port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.csye6225_vpc.id
 
