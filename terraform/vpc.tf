@@ -103,8 +103,11 @@ resource "aws_route53_record" "webapp_a_record" {
   zone_id = var.hosted_zone
   name    = "${var.hosted_zone_name}.sampurna.xyz"
   type    = "A"
-  ttl     = 300
-  records = [aws_instance.webapp_server.public_ip]
+  alias {
+    name                   = aws_lb.csye6225_webapp_load_balancer.dns_name
+    zone_id                = aws_lb.csye6225_webapp_load_balancer.zone_id
+    evaluate_target_health = true
+  }
 }
 
 resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
@@ -206,6 +209,7 @@ resource "aws_iam_role" "ec2_role" {
     }
 EOF
 }
+
 resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ec2_s3_cloudwatch_route53_policy.arn
@@ -215,4 +219,3 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   name = "ec2_instance_profile"
   role = aws_iam_role.ec2_role.name # Attach the IAM role
 }
-
