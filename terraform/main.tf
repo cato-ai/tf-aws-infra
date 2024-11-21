@@ -429,7 +429,7 @@ resource "aws_sns_topic" "user_verification_trigger" {
 }
 
 resource "aws_iam_policy" "function_logging_policy" {
-  name   = "function-logging-policy"
+  name = "function-logging-policy"
   policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -466,7 +466,7 @@ resource "aws_iam_role" "iam_for_lambda" {
 
 data "archive_file" "lambda" {
   type        = "zip"
-  source_dir = "../../serverless/source"
+  source_dir  = "../../serverless/source"
   output_path = var.file_name
 }
 
@@ -479,16 +479,16 @@ resource "aws_lambda_function" "user_verification_push_email" {
   handler       = "index.handler"
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
-  depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
-  runtime = "nodejs20.x"
+  depends_on       = [aws_cloudwatch_log_group.lambda_log_group]
+  runtime          = "nodejs20.x"
 
   environment {
     variables = {
       DB_CONNECTION_URL = "postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/${var.DB_NAME}"
-      DB_USERNAME = var.DB_USERNAME
-      DB_PASSWORD = var.DB_PASSWORD
-      API_KEY = var.lambda-mailgun-api-key
-      DOMAIN = var.hosted_zone_name
+      DB_USERNAME       = var.DB_USERNAME
+      DB_PASSWORD       = var.DB_PASSWORD
+      API_KEY           = var.lambda-mailgun-api-key
+      DOMAIN            = var.hosted_zone_name
     }
   }
 }

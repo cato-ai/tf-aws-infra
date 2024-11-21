@@ -190,8 +190,8 @@ resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
         Resource = "*"
       },
       {
-        Effect = "Allow",
-        Action = "SNS:Publish",
+        Effect   = "Allow",
+        Action   = "SNS:Publish",
         Resource = "${aws_sns_topic.user_verification_trigger.arn}"
       }
 
