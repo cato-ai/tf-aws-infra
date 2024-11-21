@@ -188,7 +188,13 @@ resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
           "rds:DescribeDBClusters"
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = "SNS:Publish",
+        Resource = "${aws_sns_topic.user_verification_trigger.arn}"
       }
+
     ]
   })
 }
@@ -209,6 +215,29 @@ resource "aws_iam_role" "ec2_role" {
     }
 EOF
 }
+
+# resource "aws_iam_policy" "sns_full_access" {
+#   name        = "SNSFullAccessPolicy"
+#   description = "Grant full access to SNS"
+#   policy = <<EOF
+#     {
+#       "Version": "2012-10-17",
+#       "Statement": [
+#         {
+#           "Effect": "Allow",
+#           "Action": "SNS:Publish",
+#           "Resource": "${aws_sns_topic.user_verification_trigger.arn}"
+#         }
+#       ]
+#     }
+# EOF
+# }
+
+# resource "aws_iam_role_policy_attachment" "attach_sns_policy" {
+#   role       = aws_iam_role.ec2_role.name
+#   policy_arn = aws_iam_policy.sns_full_access.arn
+# }
+
 
 resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
   role       = aws_iam_role.ec2_role.name

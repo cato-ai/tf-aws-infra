@@ -75,6 +75,20 @@
 #   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 # }
 
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+
 resource "aws_security_group" "application_security_group" {
   name        = "application_security_group"
   description = "Security Group for web application EC2 instances"
@@ -264,11 +278,11 @@ resource "aws_autoscaling_group" "webapp_auto_scaler" {
 
   vpc_zone_identifier       = [aws_subnet.csye6225_subnet_0_public.id, aws_subnet.csye6225_subnet_1_public.id, aws_subnet.csye6225_subnet_2_public.id]
   health_check_type         = "EBS"
-  health_check_grace_period = 500
+  health_check_grace_period = 400
   enabled_metrics           = ["GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity", "GroupInServiceInstances", "GroupPendingInstances", "GroupStandbyInstances", "GroupTerminatingInstances"]
-  max_size                  = 5
-  min_size                  = 3
-  desired_capacity          = 3
+  max_size                  = 3
+  min_size                  = 1
+  desired_capacity          = 1
 
   target_group_arns = [aws_lb_target_group.webapp_lb_target_group.arn]
 }
@@ -337,7 +351,6 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
     sudo systemctl restart amazon-cloudwatch-agent
 
     systemctl restart csye6225.service
-
   EOF
   )
 
@@ -391,3 +404,107 @@ resource "aws_lb_listener" "webapp_api_listener" {
     target_group_arn = aws_lb_target_group.webapp_lb_target_group.arn
   }
 }
+
+resource "aws_sns_topic" "user_verification_trigger" {
+  name            = "user_verification_trigger"
+  delivery_policy = <<EOF
+  {
+    "http": {
+      "defaultHealthyRetryPolicy": {
+        "minDelayTarget": 20,
+        "maxDelayTarget": 20,
+        "numRetries": 0,
+        "numMaxDelayRetries": 0,
+        "numNoDelayRetries": 0,
+        "numMinDelayRetries": 0,
+        "backoffFunction": "linear"
+      },
+      "disableSubscriptionOverrides": false,
+      "defaultThrottlePolicy": {
+        "maxReceivesPerSecond": 1
+      }
+    }
+  }
+  EOF
+}
+
+resource "aws_iam_policy" "function_logging_policy" {
+  name   = "function-logging-policy"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        Action : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect : "Allow",
+        Resource : "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "function_logging_policy_attachment" {
+  role       = aws_iam_role.iam_for_lambda.id
+  policy_arn = aws_iam_policy.function_logging_policy.arn
+}
+
+resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  name              = "/aws/lambda/${var.function_name}"
+  retention_in_days = 7
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+
+resource "aws_iam_role" "iam_for_lambda" {
+  name               = "iam_for_lambda"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+data "archive_file" "lambda" {
+  type        = "zip"
+  source_dir = "../../serverless/source"
+  output_path = var.file_name
+}
+
+resource "aws_lambda_function" "user_verification_push_email" {
+  # If the file is not in the current working directory you will need to include a
+  # path.module in the filename.
+  filename      = var.file_name
+  function_name = var.function_name
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "index.handler"
+
+  source_code_hash = data.archive_file.lambda.output_base64sha256
+  depends_on    = [aws_cloudwatch_log_group.lambda_log_group]
+  runtime = "nodejs20.x"
+
+  environment {
+    variables = {
+      DB_CONNECTION_URL = "postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/${var.DB_NAME}"
+      DB_USERNAME = var.DB_USERNAME
+      DB_PASSWORD = var.DB_PASSWORD
+      API_KEY = var.lambda-mailgun-api-key
+      DOMAIN = var.hosted_zone_name
+    }
+  }
+}
+
+resource "aws_lambda_permission" "allow_sns_trigger" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.user_verification_push_email.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.user_verification_trigger.arn
+}
+
+
+resource "aws_sns_topic_subscription" "user_updates_lampda_target" {
+  topic_arn = aws_sns_topic.user_verification_trigger.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.user_verification_push_email.arn
+}
+
+

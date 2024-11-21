@@ -94,4 +94,24 @@ variable "hosted_zone_name" {
   default     = "dev" # default is dev.sampurna.xyz
 }
 
+variable "function_name" {
+  description = "This is the name of the lambda function"
+  type = string
+  default = "handler"
+  
+}
+
+variable "file_name" {
+  description = "This is the file name"
+  type = string
+  default = "serverless.zip"
+}
+
+
+variable "lambda-mailgun-api-key" {
+  description = "This is the API key for the dev/demo account to send verification mails"
+  type = string
+  default = "401d8332d3860d9145d0b14bffeb2a7f-6df690bb-5454acdc"
+}
+
 
