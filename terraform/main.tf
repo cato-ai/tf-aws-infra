@@ -297,15 +297,15 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
   image_id      = var.ami_name
   instance_type = "t2.small"
 
-  depends_on = [ aws_kms_key.ec2_key, aws_secretsmanager_secret.rds_creds_secret ]
+  depends_on = [aws_kms_key.ec2_key, aws_secretsmanager_secret.rds_creds_secret]
 
   block_device_mappings {
     device_name = "/dev/sda1"
     ebs {
-      volume_size          = 25
-      volume_type          = "gp2"
-      encrypted            = true
-      kms_key_id           = aws_kms_key.ec2_key.arn
+      volume_size           = 25
+      volume_type           = "gp2"
+      encrypted             = true
+      kms_key_id            = aws_kms_key.ec2_key.arn
       delete_on_termination = true
     }
   }
@@ -529,7 +529,7 @@ resource "aws_lambda_function" "user_verification_push_email" {
       # DB_PASSWORD       = var.DB_PASSWORD
       # API_KEY           = var.lambda-mailgun-api-key
       # DOMAIN            = var.hosted_zone_name
-      SECRET_NAME         = aws_secretsmanager_secret.rds_creds_secret.name
+      SECRET_NAME = aws_secretsmanager_secret.rds_creds_secret.name
     }
   }
 }

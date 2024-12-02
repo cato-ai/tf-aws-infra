@@ -114,9 +114,9 @@ variable "lambda_mailgun_api_key" {
   default     = "43161a3741163a2ff3238b38b452550f-f55d7446-407aa3fd"
 }
 
-variable "dev_cert"{
-  type = string
-  default = "arn:aws:acm:us-east-1:664418983459:certificate/c199c171-dba4-44c2-a9e5-3967eb106f68"
+variable "dev_cert" {
+  type        = string
+  default     = "arn:aws:acm:us-east-1:664418983459:certificate/c199c171-dba4-44c2-a9e5-3967eb106f68"
   description = "This is the certificate for dev account"
 }
 

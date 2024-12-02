@@ -39,26 +39,26 @@ resource "aws_kms_key" "s3_key" {
     Id      = "key-policy-s3-kms",
     Statement = [
       {
-        Sid       = "AllowRootAccount",
-        Effect    = "Allow",
+        Sid    = "AllowRootAccount",
+        Effect = "Allow",
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        Action    = "kms:*",
-        Resource  = "*"
+        Action   = "kms:*",
+        Resource = "*"
       },
       {
-        Sid       = "AllowEC2RoleToUseKey",
-        Effect    = "Allow",
+        Sid    = "AllowEC2RoleToUseKey",
+        Effect = "Allow",
         Principal = {
           AWS = aws_iam_role.ec2_role.arn
         },
-        Action    = [
+        Action = [
           "kms:Decrypt",
           "kms:GenerateDataKey",
           "kms:Encrypt"
         ],
-        Resource  = "*"
+        Resource = "*"
       }
     ]
   })
@@ -77,7 +77,7 @@ resource "aws_kms_key" "secrets_key" {
   enable_key_rotation     = true
   rotation_period_in_days = 90
   deletion_window_in_days = 30
-  multi_region = true
+  multi_region            = true
 }
 
 resource "aws_kms_key_policy" "ec2_key_policy" {
@@ -99,13 +99,13 @@ resource "aws_kms_key_policy" "ec2_key_policy" {
         Sid    = "Allow use of the key"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role.ec2_role.name}"        
-          }
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role.ec2_role.name}"
+        }
         Action = [
           "kms:Decrypt",
           "kms:GenerateDataKey",
           "kms:DescribeKey",
-          "kms:CreateGrant"        
+          "kms:CreateGrant"
         ]
         Resource = aws_kms_key.ec2_key.arn
       },
@@ -116,13 +116,13 @@ resource "aws_kms_key_policy" "ec2_key_policy" {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
         }
         Action = [
-            "kms:Encrypt",
-            "kms:Decrypt",
-            "kms:ReEncrypt*",
-            "kms:GenerateDataKey*",
-            "kms:DescribeKey",
-            "kms:CreateGrant"        
-          ]
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+          "kms:CreateGrant"
+        ]
         Resource = aws_kms_key.ec2_key.arn
       }
     ]
