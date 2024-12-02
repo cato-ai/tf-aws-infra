@@ -108,10 +108,16 @@ variable "file_name" {
 }
 
 
-variable "lambda-mailgun-api-key" {
+variable "lambda_mailgun_api_key" {
   description = "This is the API key for the dev/demo account to send verification mails"
   type        = string
-  default     = "401d8332d3860d9145d0b14bffeb2a7f-6df690bb-5454acdc"
+  default     = "43161a3741163a2ff3238b38b452550f-f55d7446-407aa3fd"
+}
+
+variable "dev_cert"{
+  type = string
+  default = "arn:aws:acm:us-east-1:664418983459:certificate/c199c171-dba4-44c2-a9e5-3967eb106f68"
+  description = "This is the certificate for dev account"
 }
 
 

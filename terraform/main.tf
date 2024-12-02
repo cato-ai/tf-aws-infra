@@ -174,8 +174,10 @@ resource "aws_db_instance" "csye6225_webapp_db" {
   allocated_storage      = 20
   multi_az               = false
   username               = var.DB_USERNAME
-  password               = var.DB_PASSWORD
+  password               = random_password.password.result
   publicly_accessible    = false
+  kms_key_id             = aws_kms_key.rds_key.arn
+  storage_encrypted      = true
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.database_security_group.id]
   db_subnet_group_name   = aws_db_subnet_group.csye6225_db_subnet_group.id
@@ -295,16 +297,40 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
   image_id      = var.ami_name
   instance_type = "t2.small"
 
+  depends_on = [ aws_kms_key.ec2_key, aws_secretsmanager_secret.rds_creds_secret ]
+
+  block_device_mappings {
+    device_name = "/dev/sda1"
+    ebs {
+      volume_size          = 25
+      volume_type          = "gp2"
+      encrypted            = true
+      kms_key_id           = aws_kms_key.ec2_key.arn
+      delete_on_termination = true
+    }
+  }
 
   user_data = base64encode(
     <<-EOF
     #!/bin/bash
     touch /opt/webapp/.env
-    DB_NAME="${aws_db_instance.csye6225_webapp_db.db_name}"
-    DB_USER="${aws_db_instance.csye6225_webapp_db.username}"
-    DB_PASSWORD="${aws_db_instance.csye6225_webapp_db.password}"
-    S3_NAME="${aws_s3_bucket.webapp_bucket.bucket}"
-    echo DB_CONNECTION_URL="postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/$DB_NAME" >> /opt/webapp/.env
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+
+    sudo apt-get update -y
+    sudo apt-get install -y jq
+
+
+    aws --version
+
+    RDS_SECRET=$(aws secretsmanager get-secret-value --secret-id "${aws_secretsmanager_secret.rds_creds_secret.name}" --query SecretString --output text)
+    DB_NAME="$(echo "$RDS_SECRET" | jq -r '.DB_NAME')"
+    DB_USER="$(echo "$RDS_SECRET" | jq -r '.DB_USER')"
+    DB_PASSWORD="$(echo "$RDS_SECRET" | jq -r '.DB_PASSWORD')"
+    S3_NAME="$(echo "$RDS_SECRET" | jq -r '.S3_NAME')"
+
+    echo DB_CONNECTION_URL="postgres://$DB_USER:$DB_PASSWORD@${aws_db_instance.csye6225_webapp_db.endpoint}/$DB_NAME" >> /opt/webapp/.env
     echo SERVER_HOSTNAME="${var.SERVER_HOSTNAME}" >> /opt/webapp/.env
     echo SERVER_PORT_NUMBER="${var.SERVER_PORT_NUMBER}" >> /opt/webapp/.env
     echo S3_BUCKET_NAME=$S3_NAME >> /opt/webapp/.env
@@ -363,7 +389,7 @@ resource "aws_launch_template" "auto_scaler_launch_template_webapp" {
     security_groups             = [aws_security_group.application_security_group.id]
   }
 
-  key_name = "CSYE6225-07"
+  # key_name = "CSYE6225-07"
 }
 
 
@@ -394,11 +420,12 @@ resource "aws_lb_target_group" "webapp_lb_target_group" {
   }
 }
 
+
 resource "aws_lb_listener" "webapp_api_listener" {
   load_balancer_arn = aws_lb.csye6225_webapp_load_balancer.arn
-  port              = 80
-  protocol          = "HTTP"
-
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn   = var.hosted_zone_name == "dev" ? var.dev_cert : "arn:aws:acm:us-east-1:762233751904:certificate/8270a4f3-8b31-40c4-8120-74f2b84a3370"
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.webapp_lb_target_group.arn
@@ -440,7 +467,18 @@ resource "aws_iam_policy" "function_logging_policy" {
         ],
         Effect : "Allow",
         Resource : "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.rds_creds_secret.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = aws_kms_key.secrets_key.arn
       }
+
     ]
   })
 }
@@ -457,6 +495,7 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
     prevent_destroy = false
   }
 }
+
 
 
 resource "aws_iam_role" "iam_for_lambda" {
@@ -481,14 +520,16 @@ resource "aws_lambda_function" "user_verification_push_email" {
   source_code_hash = data.archive_file.lambda.output_base64sha256
   depends_on       = [aws_cloudwatch_log_group.lambda_log_group]
   runtime          = "nodejs20.x"
+  timeout          = 30
 
   environment {
     variables = {
-      DB_CONNECTION_URL = "postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/${var.DB_NAME}"
-      DB_USERNAME       = var.DB_USERNAME
-      DB_PASSWORD       = var.DB_PASSWORD
-      API_KEY           = var.lambda-mailgun-api-key
-      DOMAIN            = var.hosted_zone_name
+      # DB_CONNECTION_URL = "postgres://${var.DB_USERNAME}:${var.DB_PASSWORD}@${aws_db_instance.csye6225_webapp_db.endpoint}/${var.DB_NAME}"
+      # DB_USERNAME       = var.DB_USERNAME
+      # DB_PASSWORD       = var.DB_PASSWORD
+      # API_KEY           = var.lambda-mailgun-api-key
+      # DOMAIN            = var.hosted_zone_name
+      SECRET_NAME         = aws_secretsmanager_secret.rds_creds_secret.name
     }
   }
 }
