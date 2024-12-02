@@ -17,3 +17,10 @@ PLAN
 ```
 terraform plan 
 ```
+
+
+If you want to import certificate, use the following command
+
+```
+aws acm import-certificate --certificate file://demo_sampurna_xyz.ctr --certificate-chain file://demo_sampurna_xyz.ca-bundle --private-key file://private.key.base64
+```

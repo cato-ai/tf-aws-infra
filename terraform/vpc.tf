@@ -65,6 +65,14 @@ resource "aws_kms_key" "mykey" {
 resource "aws_s3_bucket" "webapp_bucket" {
   bucket        = random_uuid.bucket_uuid.result
   force_destroy = true
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm     = "aws:kms"
+        kms_master_key_id = aws_kms_key.s3_key.arn
+      }
+    }
+  }
 
   tags = {
     Name        = "Private S3 Bucket"
@@ -174,6 +182,7 @@ resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
         # EC2 Describe Permissions
         Effect = "Allow",
         Action = [
+          "ec2:DescribeVolumes",
           "ec2:DescribeTags",
           "ec2:DescribeInstances"
         ],
@@ -185,10 +194,22 @@ resource "aws_iam_policy" "ec2_s3_cloudwatch_route53_policy" {
         Action = [
           "ssm:GetParameters",
           "rds:DescribeDBInstances",
-          "rds:DescribeDBClusters"
+          "rds:DescribeDBClusters",
+          "kms:*",
+          "ec2:*",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds"
         ],
         Resource = "*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "SNS:Publish",
+        Resource = "${aws_sns_topic.user_verification_trigger.arn}"
       }
+
     ]
   })
 }
@@ -210,9 +231,74 @@ resource "aws_iam_role" "ec2_role" {
 EOF
 }
 
+
+data "aws_caller_identity" "current" {}
+
+
+resource "aws_iam_policy" "service_linked_role_policy" {
+  name        = "ServiceLinkedRolePolicy"
+  description = "Allow service-linked role use of the customer managed key"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        # Principal = {
+        #   AWS = [
+        #     "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+        #   ]
+        # }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_service_linked_role_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.service_linked_role_policy.arn
+}
+
+
+
+# resource "aws_iam_policy" "sns_full_access" {
+#   name        = "SNSFullAccessPolicy"
+#   description = "Grant full access to SNS"
+#   policy = <<EOF
+#     {
+#       "Version": "2012-10-17",
+#       "Statement": [
+#         {
+#           "Effect": "Allow",
+#           "Action": "SNS:Publish",
+#           "Resource": "${aws_sns_topic.user_verification_trigger.arn}"
+#         }
+#       ]
+#     }
+# EOF
+# }
+
+# resource "aws_iam_role_policy_attachment" "attach_sns_policy" {
+#   role       = aws_iam_role.ec2_role.name
+#   policy_arn = aws_iam_policy.sns_full_access.arn
+# }
+
+
 resource "aws_iam_role_policy_attachment" "attach_combined_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ec2_s3_cloudwatch_route53_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "kms_full_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser"
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
