@@ -85,7 +85,7 @@ variable "SERVER_PORT_NUMBER" {
 variable "hosted_zone" {
   description = "The hosted zone depending upon it's dev or demo account"
   type        = string
-  default     = "Z05102462WJ9ZH32SJ0W6" # default is dev.sampurna.xyz id
+  default     = "" # default is dev.sampurna.xyz id
 }
 
 variable "hosted_zone_name" {
@@ -111,12 +111,12 @@ variable "file_name" {
 variable "lambda_mailgun_api_key" {
   description = "This is the API key for the dev/demo account to send verification mails"
   type        = string
-  default     = "43161a3741163a2ff3238b38b452550f-f55d7446-407aa3fd"
+  default     = ""
 }
 
 variable "dev_cert" {
   type        = string
-  default     = "arn:aws:acm:us-east-1:664418983459:certificate/c199c171-dba4-44c2-a9e5-3967eb106f68"
+  default     = ""
   description = "This is the certificate for dev account"
 }
 
