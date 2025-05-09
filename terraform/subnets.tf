@@ -5,7 +5,7 @@ data "aws_availability_zones" "available" {
 resource "aws_subnet" "csye6225_subnet_0_public" {
   cidr_block              = cidrsubnet(var.vpc_ip, 8, 0)
   map_public_ip_on_launch = "true"
-  vpc_id                  = aws_vpc.csye6225_vpc.id
+  vpc_id                  = aws_vpc.csye6225_vpc.bad
   tags = {
     Name = "csye6225_subnet_0_public"
   }
